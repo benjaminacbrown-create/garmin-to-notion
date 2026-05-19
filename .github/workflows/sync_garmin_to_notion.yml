@@ -2,7 +2,7 @@ name: Sync Garmin to Notion
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * *'  # Runs at 01:00
   workflow_dispatch:
 
 env:
@@ -17,17 +17,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: requirements.txt
 
       - name: Restore Garmin tokens
-        uses: actions/cache@v4
+        id: garmin-cache
+        uses: actions/cache/restore@v4
         with:
           path: .garminconnect
-          key: ${{ runner.os }}-garmin-tokens-v1
+          key: ${{ runner.os }}-garmin-tokens-v2
           restore-keys: |
             ${{ runner.os }}-garmin-tokens-
 
@@ -52,3 +53,10 @@ jobs:
           python personal-records.py
           python daily-steps.py
           python sleep-data.py
+
+      - name: Save Garmin tokens
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .garminconnect
+          key: ${{ runner.os }}-garmin-tokens-v2
