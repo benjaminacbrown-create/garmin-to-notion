@@ -14,21 +14,15 @@ GARMIN_EMAIL = os.getenv("GARMIN_EMAIL")
 GARMIN_PASSWORD = os.getenv("GARMIN_PASSWORD")
 
 
-def init_garmin(max_retries=3, base_sleep=120):
-    tokenstore = Path(TOKENSTORE)
-    tokenstore.mkdir(parents=True, exist_ok=True)
+def _try_token_login(tokenstore):
+    """Attempt to login using saved tokens. Returns client or raises."""
+    client = Garmin()
+    client.login(str(tokenstore))
+    return client
 
-    # Check if token files exist before trying to load them
-    token_file = tokenstore / "oauth1_token.json"
-    if token_file.exists():
-        try:
-            client = Garmin()
-            client.login(str(tokenstore))
-            return client
-        except Exception:
-            pass  # Fall through to fresh login
 
-    # No saved tokens - do a fresh username/password login
+def _fresh_login(tokenstore, max_retries=3, base_sleep=120):
+    """Login with email/password credentials and save tokens."""
     if not GARMIN_EMAIL or not GARMIN_PASSWORD:
         raise RuntimeError("GARMIN_EMAIL and GARMIN_PASSWORD must be set")
 
@@ -41,8 +35,8 @@ def init_garmin(max_retries=3, base_sleep=120):
                 password=GARMIN_PASSWORD,
                 is_cn=False,
             )
-            client.login()  # fresh login, no tokenstore arg
-            client.garth.dump(str(tokenstore))  # save tokens for next run
+            client.login()
+            client.garth.dump(str(tokenstore))
             return client
 
         except GarminConnectTooManyRequestsError as e:
@@ -63,3 +57,17 @@ def init_garmin(max_retries=3, base_sleep=120):
     raise RuntimeError(
         f"Failed to authenticate with Garmin after {max_retries} attempts"
     ) from last_error
+
+
+def init_garmin(max_retries=3, base_sleep=120):
+    tokenstore = Path(TOKENSTORE)
+    tokenstore.mkdir(parents=True, exist_ok=True)
+
+    # Try token-based login first
+    try:
+        return _try_token_login(tokenstore)
+    except (FileNotFoundError, GarminConnectAuthenticationError, Exception):
+        pass  # Fall through to fresh credential login
+
+    # Fall back to fresh credential login
+    return _fresh_login(tokenstore, max_retries=max_retries, base_sleep=base_sleep)
