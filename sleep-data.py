@@ -1,5 +1,5 @@
 from datetime import datetime
-from garminconnect import Garmin
+from garmin_auth import init_garmin
 from notion_client import Client
 from dotenv import load_dotenv, dotenv_values
 import pytz
@@ -83,14 +83,9 @@ def main():
     load_dotenv()
 
     # Initialize Garmin and Notion clients using environment variables
-    garmin_email = os.getenv("GARMIN_EMAIL")
-    garmin_password = os.getenv("GARMIN_PASSWORD")
+        database_id = os.getenv("NOTION_SLEEP_DB_ID")
     notion_token = os.getenv("NOTION_TOKEN")
-    database_id = os.getenv("NOTION_SLEEP_DB_ID")
-
-    # Initialize Garmin client and login
-    garmin = Garmin(garmin_email, garmin_password)
-    garmin.login()
+    garmin = init_garmin()
     client = Client(auth=notion_token)
 
     data = get_sleep_data(garmin)
