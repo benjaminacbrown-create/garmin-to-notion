@@ -23,7 +23,7 @@ def init_garmin(max_retries=3, base_sleep=120):
         client = Garmin()
         client.login(str(tokenstore))
         return client
-        except Exception:
+    except Exception:
         pass
 
     # Fall back to username/password only if needed
