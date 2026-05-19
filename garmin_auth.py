@@ -40,10 +40,15 @@ def init_garmin(max_retries=3, base_sleep=120):
 
     for attempt in range(max_retries):
         try:
-            # garminconnect 0.3.0+: pass tokenstore so tokens are saved automatically
-            client = Garmin(email=GARMIN_EMAIL, password=GARMIN_PASSWORD, tokenstore=tokenstore_str)
+            client = Garmin(email=GARMIN_EMAIL, password=GARMIN_PASSWORD)
             client.login()
-            print("Logged in with credentials and saved tokens.")
+            # Save tokens to tokenstore for future runs
+            try:
+                client.garth.dump(tokenstore_str)
+                print(f"Tokens saved to {tokenstore_str}")
+            except Exception as save_err:
+                print(f"Warning: Could not save tokens: {save_err}")
+            print("Logged in with credentials.")
             return client
         except GarminConnectTooManyRequestsError as e:
             last_error = e
