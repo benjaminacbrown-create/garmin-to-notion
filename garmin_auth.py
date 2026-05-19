@@ -9,7 +9,6 @@ from garminconnect import (
 )
 from requests.exceptions import HTTPError
 
-
 TOKENSTORE = os.getenv("GARMINTOKENS", ".garminconnect")
 GARMIN_EMAIL = os.getenv("GARMIN_EMAIL")
 GARMIN_PASSWORD = os.getenv("GARMIN_PASSWORD")
@@ -19,13 +18,15 @@ def init_garmin(max_retries=3, base_sleep=120):
     tokenstore = Path(TOKENSTORE)
     tokenstore.mkdir(parents=True, exist_ok=True)
 
-    # Try saved tokens first
-    try:
-        client = Garmin()
-        client.login(str(tokenstore))
-        return client
-    except Exception:
-        pass
+    # Check if token files exist before trying to load them
+    token_file = tokenstore / "oauth1_token.json"
+    if token_file.exists():
+        try:
+            client = Garmin()
+            client.login(str(tokenstore))
+            return client
+        except Exception:
+            pass  # Fall through to fresh login
 
     # No saved tokens - do a fresh username/password login
     if not GARMIN_EMAIL or not GARMIN_PASSWORD:
@@ -60,5 +61,5 @@ def init_garmin(max_retries=3, base_sleep=120):
                 raise
 
     raise RuntimeError(
-        f"Garmin rate limit hit after {max_retries} attempts; try again later."
+        f"Failed to authenticate with Garmin after {max_retries} attempts"
     ) from last_error
