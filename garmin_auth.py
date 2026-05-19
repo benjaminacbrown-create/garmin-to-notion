@@ -27,7 +27,7 @@ def init_garmin(max_retries=3, base_sleep=120):
     except Exception:
         pass
 
-    # Fall back to username/password
+    # No saved tokens - do a fresh username/password login
     if not GARMIN_EMAIL or not GARMIN_PASSWORD:
         raise RuntimeError("GARMIN_EMAIL and GARMIN_PASSWORD must be set")
 
@@ -40,7 +40,8 @@ def init_garmin(max_retries=3, base_sleep=120):
                 password=GARMIN_PASSWORD,
                 is_cn=False,
             )
-            client.login(str(tokenstore))
+            client.login()  # fresh login, no tokenstore arg
+            client.garth.dump(str(tokenstore))  # save tokens for next run
             return client
 
         except GarminConnectTooManyRequestsError as e:
