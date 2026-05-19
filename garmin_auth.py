@@ -17,6 +17,7 @@ GARMIN_PASSWORD = os.getenv("GARMIN_PASSWORD")
 
 def init_garmin(max_retries=3, base_sleep=120):
     tokenstore = Path(TOKENSTORE)
+    tokenstore.mkdir(parents=True, exist_ok=True)
 
     # Try saved tokens first
     try:
@@ -26,7 +27,7 @@ def init_garmin(max_retries=3, base_sleep=120):
     except Exception:
         pass
 
-    # Fall back to username/password only if needed
+    # Fall back to username/password
     if not GARMIN_EMAIL or not GARMIN_PASSWORD:
         raise RuntimeError("GARMIN_EMAIL and GARMIN_PASSWORD must be set")
 
@@ -39,10 +40,7 @@ def init_garmin(max_retries=3, base_sleep=120):
                 password=GARMIN_PASSWORD,
                 is_cn=False,
             )
-            client.login()
-
-            tokenstore.parent.mkdir(parents=True, exist_ok=True)
-            client.garth.dump(str(tokenstore))
+            client.login(str(tokenstore))
             return client
 
         except GarminConnectTooManyRequestsError as e:
